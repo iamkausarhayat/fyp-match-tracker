@@ -1,0 +1,169 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FYP Match Tracker - NUML</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#012357',
+            brandPrimary: '#1f3a6e',
+            brandAccent: '#2b6cb0',
+            brandLight: '#f8f9ff',
+            brandSlate: '#213145',
+            brandMuted: '#8da5e0'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#012357] text-white font-sans antialiased overflow-hidden select-none m-0 p-0 min-h-screen flex flex-col justify-between relative">
+
+  <!-- Background Radar / Geometry -->
+  <div class="absolute inset-0 pointer-events-none opacity-25">
+    <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient cx="50%" cy="40%" id="glow" r="50%">
+          <stop offset="0%" stop-color="#8da5e0" stop-opacity="0.4"></stop>
+          <stop offset="70%" stop-color="#1f3a6e" stop-opacity="0.1"></stop>
+          <stop offset="100%" stop-color="#012357" stop-opacity="0"></stop>
+        </radialGradient>
+      </defs>
+      <rect fill="url(#glow)" height="100%" width="100%"></rect>
+      <g opacity="0.4" stroke="#8da5e0" stroke-dasharray="4 8" stroke-width="1">
+        <circle cx="50%" cy="40%" r="120"></circle>
+        <circle cx="50%" cy="40%" r="200"></circle>
+        <circle cx="50%" cy="40%" r="300"></circle>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Top Header: NUML Identity -->
+  <header class="relative z-10 pt-8 px-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 shadow-sm">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="font-mono text-xs font-semibold tracking-wider uppercase text-blue-100">
+        NUML ISLAMABAD • DEPARTMENT OF COMPUTER SCIENCE
+      </span>
+    </div>
+  </header>
+
+  <!-- Center Content: Logo & Titles -->
+  <main class="relative z-10 flex flex-col items-center justify-center text-center px-6 my-auto">
+    <!-- Icon Shield -->
+    <div class="relative mb-6">
+      <div class="absolute -inset-3 rounded-full bg-blue-400/20 blur-xl animate-pulse"></div>
+      <div class="relative w-24 h-24 rounded-2xl bg-gradient-to-tr from-[#1f3a6e] to-[#2b6cb0] border border-white/20 shadow-2xl flex items-center justify-center">
+        <span class="material-symbols-outlined text-white text-5xl">
+          verified_user
+        </span>
+      </div>
+      <div class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-500 text-white font-mono text-[10px] font-bold tracking-widest uppercase shadow">
+        AP v1.0
+      </div>
+    </div>
+
+    <!-- App Name -->
+    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-2 drop-shadow">
+      FYP Match Tracker
+    </h1>
+    <p class="text-base md:text-lg text-blue-200 font-medium tracking-wide max-w-md">
+      Enterprise AI Similarity &amp; Verification System
+    </p>
+
+    <!-- Indexed Counter Pill -->
+    <div class="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-blue-100 backdrop-blur-sm shadow-sm">
+      <span class="material-symbols-outlined text-sm text-blue-300">database</span>
+      <span class="font-mono text-xs text-blue-200">250+ Department FYP Archives Indexed</span>
+    </div>
+  </main>
+
+  <!-- Bottom: Loading Progress & Skip -->
+  <footer class="relative z-10 flex flex-col items-center w-full max-w-md mx-auto px-6 pb-10">
+    <!-- Progress Bar -->
+    <div class="w-full bg-white/15 rounded-full h-2 overflow-hidden backdrop-blur-sm mb-3">
+      <div id="progressBar" class="h-full bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400 rounded-full transition-all duration-75" style="width: 0%;"></div>
+    </div>
+
+    <!-- Status Message & Percentage -->
+    <div class="w-full flex items-center justify-between text-xs font-mono text-blue-200 mb-6">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-xs animate-spin text-blue-300">sync</span>
+        <span id="statusText">Initializing similarity engine...</span>
+      </div>
+      <span id="percentText" class="font-bold text-white">0%</span>
+    </div>
+
+    <!-- Enter Now Button -->
+    <button id="skipBtn" type="button" class="group inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white border border-white/20 shadow-lg cursor-pointer">
+      <span class="text-xs font-semibold uppercase tracking-wider">Enter App</span>
+      <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+    </button>
+
+    <p class="text-[11px] text-blue-300/70 font-mono mt-4">
+      Powered by Kausar Khattak &amp; Mudassir Ahmad
+    </p>
+  </footer>
+
+  <script>
+    const progressBar = document.getElementById('progressBar');
+    const percentText = document.getElementById('percentText');
+    const statusText = document.getElementById('statusText');
+    const skipBtn = document.getElementById('skipBtn');
+
+    const homeUrl = '@Url.Action("Index", "Home")';
+
+    const stages = [
+      { at: 15, msg: "Connecting to NUML Project Corpus..." },
+      { at: 40, msg: "Warming Smart Local Embeddings (16MB)..." },
+      { at: 70, msg: "Syncing Jaccard Keyword Matcher..." },
+      { at: 90, msg: "Crossref Web API Gateway Ready..." },
+      { at: 100, msg: "System Ready. Launching..." }
+    ];
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 2;
+      if (progress > 100) progress = 100;
+
+      progressBar.style.width = progress + '%';
+      percentText.innerText = progress + '%';
+
+      const currentStage = stages.find(s => progress <= s.at);
+      if (currentStage) {
+        statusText.innerText = currentStage.msg;
+      }
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(launchHome, 300);
+      }
+    }, 60);
+
+    function launchHome() {
+      window.location.href = homeUrl;
+    }
+
+    skipBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      launchHome();
+    });
+  </script>
+</body>
+</html>

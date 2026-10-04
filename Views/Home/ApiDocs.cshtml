@@ -1,0 +1,227 @@
+@{
+    ViewData["Title"] = "REST Web API Explorer & Documentation - NUML";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="mb-4">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white border shadow-sm mb-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace small">PLO-4 &bull; Requirement 4</span>
+            <span class="text-secondary small fw-semibold">Public RESTful Web API v1.0</span>
+        </div>
+        <h2 class="fw-bold mb-1" style="color: var(--numl-navy);">
+            <i class="bi bi-code-slash text-primary me-2"></i> RESTful Web API Explorer &amp; Interactive Documentation
+        </h2>
+        <p class="text-muted small mb-0">
+            Interactive testing portal for the public JSON endpoints exposed by the FYP Match Tracker application. External university portals, mobile clients, and research tools consume these endpoints.
+        </p>
+    </div>
+
+    <!-- Overview Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-8">
+                <h6 class="fw-bold text-dark mb-1">Architecture &amp; Data Contract</h6>
+                <p class="text-muted small mb-0">
+                    All endpoints return UTF-8 encoded <code>application/json</code> payloads with standardized envelope models: <code>{ "success": true, "data": ... }</code>. Built with ASP.NET Core Web API controllers.
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="badge bg-light text-secondary border p-2 font-monospace">Base URL: /api/projectsapi</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoint 1: Approved Projects -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
+        <div class="card-header bg-light border-bottom p-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary px-3 py-1.5 font-monospace fw-bold">GET</span>
+                <span class="font-monospace fw-bold text-dark">/api/projectsapi/approved</span>
+            </div>
+            <span class="badge bg-white text-secondary border">Approved / Completed Projects</span>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-muted small mb-3">
+                Returns the list of officially approved or completed FYP records stored in the department archive, optionally filtered by academic year and department.
+            </p>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-secondary mb-1">Year Filter (Optional)</label>
+                    <input type="number" id="ep1_year" class="form-control form-control-sm" placeholder="e.g. 2024 (leave blank for all)" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-secondary mb-1">Department ID (Optional)</label>
+                    <input type="number" id="ep1_dept" class="form-control form-control-sm" placeholder="e.g. 1 (leave blank for all)" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill w-100 fw-bold shadow-sm" onclick="runEp1()">
+                        <i class="bi bi-play-fill me-1"></i> Send Request
+                    </button>
+                </div>
+            </div>
+
+            <!-- Response Panel -->
+            <div id="ep1_result" class="d-none mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold">Response Body (JSON):</small>
+                    <span id="ep1_status" class="badge"></span>
+                </div>
+                <pre class="bg-dark text-light p-3 rounded-3 small font-monospace mb-0" style="max-height: 280px; overflow-y: auto;" id="ep1_json"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoint 2: Project Metadata by ID -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
+        <div class="card-header bg-light border-bottom p-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary px-3 py-1.5 font-monospace fw-bold">GET</span>
+                <span class="font-monospace fw-bold text-dark">/api/projectsapi/{id}</span>
+            </div>
+            <span class="badge bg-white text-secondary border">Single Project Metadata</span>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-muted small mb-3">
+                Fetches comprehensive metadata for a specific archive project including abstract, supervisor, keywords, and reservation token.
+            </p>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-8">
+                    <label class="form-label small fw-bold text-secondary mb-1">Project ID</label>
+                    <input type="number" id="ep2_id" class="form-control form-control-sm" value="1" placeholder="Enter Project ID (e.g. 1)" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill w-100 fw-bold shadow-sm" onclick="runEp2()">
+                        <i class="bi bi-play-fill me-1"></i> Send Request
+                    </button>
+                </div>
+            </div>
+
+            <!-- Response Panel -->
+            <div id="ep2_result" class="d-none mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold">Response Body (JSON):</small>
+                    <span id="ep2_status" class="badge"></span>
+                </div>
+                <pre class="bg-dark text-light p-3 rounded-3 small font-monospace mb-0" style="max-height: 280px; overflow-y: auto;" id="ep2_json"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoint 3: Department Statistics -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
+        <div class="card-header bg-light border-bottom p-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary px-3 py-1.5 font-monospace fw-bold">GET</span>
+                <span class="font-monospace fw-bold text-dark">/api/projectsapi/statistics</span>
+            </div>
+            <span class="badge bg-white text-secondary border">Department Analytics &amp; KPIs</span>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-muted small mb-3">
+                Aggregates real-time archive metrics including total projects, annual breakdown, active reservation tokens, and status distributions.
+            </p>
+
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm" onclick="runEp3()">
+                <i class="bi bi-play-fill me-1"></i> Send Request
+            </button>
+
+            <!-- Response Panel -->
+            <div id="ep3_result" class="d-none mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold">Response Body (JSON):</small>
+                    <span id="ep3_status" class="badge"></span>
+                </div>
+                <pre class="bg-dark text-light p-3 rounded-3 small font-monospace mb-0" style="max-height: 280px; overflow-y: auto;" id="ep3_json"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function runEp1() {
+        const year = document.getElementById('ep1_year').value;
+        const dept = document.getElementById('ep1_dept').value;
+        let url = '/api/projectsapi/approved';
+        const params = new URLSearchParams();
+        if (year) params.append('year', year);
+        if (dept) params.append('departmentId', dept);
+        if ([...params].length > 0) url += '?' + params.toString();
+
+        const resEl = document.getElementById('ep1_result');
+        const jsonEl = document.getElementById('ep1_json');
+        const statusEl = document.getElementById('ep1_status');
+
+        resEl.classList.remove('d-none');
+        jsonEl.textContent = 'Loading payload...';
+        statusEl.className = 'badge bg-warning text-dark';
+        statusEl.textContent = 'Fetching...';
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            statusEl.className = resp.ok ? 'badge bg-success' : 'badge bg-danger';
+            statusEl.textContent = resp.status + ' ' + resp.statusText;
+            jsonEl.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+            statusEl.className = 'badge bg-danger';
+            statusEl.textContent = 'Error';
+            jsonEl.textContent = err.message;
+        }
+    }
+
+    async function runEp2() {
+        const id = document.getElementById('ep2_id').value || 1;
+        const url = '/api/projectsapi/' + id;
+
+        const resEl = document.getElementById('ep2_result');
+        const jsonEl = document.getElementById('ep2_json');
+        const statusEl = document.getElementById('ep2_status');
+
+        resEl.classList.remove('d-none');
+        jsonEl.textContent = 'Loading payload...';
+        statusEl.className = 'badge bg-warning text-dark';
+        statusEl.textContent = 'Fetching...';
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            statusEl.className = resp.ok ? 'badge bg-success' : 'badge bg-danger';
+            statusEl.textContent = resp.status + ' ' + resp.statusText;
+            jsonEl.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+            statusEl.className = 'badge bg-danger';
+            statusEl.textContent = 'Error';
+            jsonEl.textContent = err.message;
+        }
+    }
+
+    async function runEp3() {
+        const url = '/api/projectsapi/statistics';
+
+        const resEl = document.getElementById('ep3_result');
+        const jsonEl = document.getElementById('ep3_json');
+        const statusEl = document.getElementById('ep3_status');
+
+        resEl.classList.remove('d-none');
+        jsonEl.textContent = 'Loading payload...';
+        statusEl.className = 'badge bg-warning text-dark';
+        statusEl.textContent = 'Fetching...';
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            statusEl.className = resp.ok ? 'badge bg-success' : 'badge bg-danger';
+            statusEl.textContent = resp.status + ' ' + resp.statusText;
+            jsonEl.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+            statusEl.className = 'badge bg-danger';
+            statusEl.textContent = 'Error';
+            jsonEl.textContent = err.message;
+        }
+    }
+</script>
+}

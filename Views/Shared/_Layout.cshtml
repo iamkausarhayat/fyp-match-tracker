@@ -1,0 +1,299 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NUML FYP Match Tracker</title>
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        :root {
+            --numl-navy: #0B2545;
+            --numl-accent: #134074;
+            --numl-light: #EEF4F8;
+            --numl-teal: #00A896;
+            --numl-gold: #F4A261;
+            --numl-red: #E63946;
+            --surface: #FFFFFF;
+            --surface-subtle: #F8FAFC;
+            --text-dark: #1E293B;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--surface-subtle);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Top Navbar */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .brand-monogram {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--numl-navy), var(--numl-teal));
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(11, 37, 69, 0.2);
+        }
+
+        .nav-link-custom {
+            font-weight: 500;
+            font-size: 0.92rem;
+            color: var(--text-dark);
+            padding: 0.5rem 0.9rem !important;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--numl-navy);
+            background: var(--numl-light);
+        }
+
+        .nav-link-custom.active {
+            color: var(--numl-navy);
+            background: #E0EBF5;
+            font-weight: 600;
+        }
+
+        .user-pill {
+            background: var(--numl-light);
+            border: 1px solid #CBD5E1;
+            padding: 0.35rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-coordinator {
+            background: #6366F1;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        .badge-student {
+            background: var(--numl-teal);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        /* Footer */
+        .footer-custom {
+            background: #0B2545;
+            color: #94A3B8;
+            font-size: 0.85rem;
+            padding: 1.75rem 0;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-credit {
+            color: #E2E8F0;
+            font-weight: 600;
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid max-w-7xl">
+            <!-- Brand -->
+            <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                <div class="brand-monogram">N</div>
+                <div>
+                    <span class="brand-font fw-bold fs-5 text-dark d-block lh-1">FYP Match Tracker</span>
+                    <small class="text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">NUML ISLAMABAD</small>
+                </div>
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Links -->
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-search me-1"></i> Check Idea
+                        </a>
+                    </li>
+
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        @if (User.IsInRole("Coordinator"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-controller="Coordinator" asp-action="Dashboard">
+                                    <i class="bi bi-speedometer2 me-1"></i> Analytics Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-controller="Coordinator" asp-action="Library">
+                                    <i class="bi bi-collection me-1"></i> FYP Archive Library
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-controller="Coordinator" asp-action="Settings">
+                                    <i class="bi bi-sliders me-1"></i> Algorithm Settings
+                                </a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-controller="Student" asp-action="History">
+                                    <i class="bi bi-clock-history me-1"></i> My Proposals & History
+                                </a>
+                            </li>
+                        }
+                    }
+
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" asp-controller="Home" asp-action="ApiDocs">
+                            <i class="bi bi-code-slash me-1"></i> Web API Docs
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- User Session / Action Buttons -->
+                <div class="d-flex align-items-center gap-2">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        @if (User.IsInRole("Guest"))
+                        {
+                            <div class="user-pill bg-light border">
+                                <i class="bi bi-lightning-charge text-success"></i>
+                                <span class="text-secondary fw-semibold">Guest Mode</span>
+                            </div>
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary btn-sm px-3 rounded-pill fw-medium">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                            </a>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-2" title="Exit Guest Mode">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="user-pill">
+                                <i class="bi bi-person-circle text-primary"></i>
+                                <span>@User.Identity.Name</span>
+                                @if (User.IsInRole("Coordinator"))
+                                {
+                                    <span class="badge-coordinator">Coordinator</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-student">Student</span>
+                                }
+                            </div>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" title="Sign Out">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                </button>
+                            </form>
+                        }
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary btn-sm px-3 rounded-pill fw-medium">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                        </a>
+                        <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm px-3 rounded-pill fw-medium" style="background-color: var(--numl-navy); border-color: var(--numl-navy);">
+                            <i class="bi bi-person-plus me-1"></i> Student Register
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Alert / Toast Notifications -->
+    <div class="container mt-3">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm d-flex align-items-center" role="alert">
+                <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                <div>@TempData["SuccessMessage"]</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+                <div>@TempData["ErrorMessage"]</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+    </div>
+
+    <!-- Main Body -->
+    <main class="flex-grow-1">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="container text-center">
+            <p class="mb-1 text-light">
+                <strong>NUML FYP Match Tracker</strong> &mdash; Advanced Semantic & Keyword Similarity Engine
+            </p>
+            <p class="mb-0 text-white-50 small">
+                Department of Computer Science &bull; National University of Modern Languages (NUML) &bull; 
+                <span class="footer-credit">Developed by Kausar Khattak &amp; Mudassir Ahmad</span> &copy; 2026
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,336 @@
+@model List<FypMatchTracker.Models.FypProject>
+@{
+    ViewData["Title"] = "FYP Repository Library - NUML";
+    var departments = ViewBag.Departments as List<FypMatchTracker.Models.Department> ?? new List<FypMatchTracker.Models.Department>();
+    var years = ViewBag.Years as List<int> ?? new List<int>();
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalItems = ViewBag.TotalItems ?? 0;
+}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--numl-navy);">Department FYP Archive Library</h3>
+            <p class="text-muted small mb-0">Browse, search, and manage archived past projects used for similarity comparison</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="ExportArchiveCsv" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+            </a>
+            <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#bulkImportModal">
+                <i class="bi bi-folder-symlink me-1"></i> Bulk Import (PDF/Word/CSV)
+            </button>
+            <button class="btn btn-primary btn-sm rounded-pill px-3" style="background-color: var(--numl-navy);" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                <i class="bi bi-plus-lg me-1"></i> Add Project
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <form method="get" asp-action="Library" class="row g-2 align-items-center">
+            <!-- Search Query -->
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="query" value="@ViewBag.Query" class="form-control border-start-0" placeholder="Search title, tools, or supervisor..." />
+                </div>
+            </div>
+
+            <!-- Department Filter -->
+            <div class="col-sm-6 col-md-3">
+                <select name="departmentId" class="form-select">
+                    <option value="">All Departments</option>
+                    @foreach (var dept in departments)
+                    {
+                        <!option value="@dept.Id" @(ViewBag.DepartmentId == dept.Id ? "selected" : "")>@dept.Name</!option>
+                    }
+                </select>
+            </div>
+
+            <!-- Year Filter -->
+            <div class="col-sm-6 col-md-2">
+                <select name="year" class="form-select">
+                    <option value="">All Years</option>
+                    @foreach (var y in years)
+                    {
+                        <!option value="@y" @(ViewBag.Year == y ? "selected" : "")>@y</!option>
+                    }
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-sm-6 col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <!option value="Completed" @(ViewBag.Status == "Completed" ? "selected" : "")>Completed</!option>
+                    <!option value="Approved" @(ViewBag.Status == "Approved" ? "selected" : "")>Approved</!option>
+                    <!option value="Reserved" @(ViewBag.Status == "Reserved" ? "selected" : "")>Reserved</!option>
+                </select>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="col-sm-6 col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: var(--numl-navy);">
+                    <i class="bi bi-funnel"></i>
+                </button>
+                <a asp-action="Library" class="btn btn-light border" title="Reset Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Archive Table Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted small">Showing <strong>@Model.Count</strong> of <strong>@totalItems</strong> projects</span>
+            <span class="badge bg-light text-muted border">Page @currentPage of @totalPages</span>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase text-secondary">
+                            <th>Project Title &amp; Abstract</th>
+                            <th>Student(s)</th>
+                            <th>University</th>
+                            <th>Department</th>
+                            <th>Year</th>
+                            <th>Supervisor</th>
+                            <th>Status / Token</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var project in Model)
+                        {
+                            string statusBadge = project.Status switch
+                            {
+                                "Completed" => "bg-light text-secondary border",
+                                "Approved" => "bg-primary-subtle text-primary border",
+                                _ => "bg-success-subtle text-success border border-success"
+                            };
+
+                            string studentName = project.StudentName ?? project.Owner?.FullName ?? "Past Batch Students";
+                            string uniName = project.UniversityName ?? "NUML Islamabad";
+
+                            <tr>
+                                <td style="max-width: 320px;">
+                                    <strong class="d-block text-dark mb-1">@project.Title</strong>
+                                    <p class="text-muted small mb-1" style="line-height: 1.4;">
+                                        @(project.Description?.Length > 100 ? project.Description.Substring(0, 100) + "..." : project.Description)
+                                    </p>
+                                    @if (!string.IsNullOrWhiteSpace(project.Keywords))
+                                    {
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var kw in project.Keywords.Split(',', StringSplitOptions.TrimEntries).Take(3))
+                                            {
+                                                <span class="badge bg-light text-muted border font-monospace" style="font-size: 0.7rem;">@kw</span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+                                <td class="small fw-semibold text-dark" style="max-width: 140px;">
+                                    @studentName
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-primary border font-monospace small">@uniName</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace">@(project.Department?.Code ?? "CS")</span>
+                                </td>
+                                <td class="font-monospace">@project.Year</td>
+                                <td class="small text-muted">
+                                    <i class="bi bi-person me-1"></i>@(project.Supervisor ?? "Dept Advisor")
+                                </td>
+                                <td>
+                                    <span class="badge @statusBadge font-monospace">@project.Status</span>
+                                    @if (!string.IsNullOrEmpty(project.ReservationToken))
+                                    {
+                                        <small class="d-block text-success font-monospace mt-1" style="font-size: 0.75rem;">
+                                            @project.ReservationToken
+                                        </small>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1 align-items-center">
+                                        @if (project.Status == "Reserved")
+                                        {
+                                            <form asp-action="ApproveProject" asp-route-id="@project.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-2 py-0 fw-semibold" title="Approve this student reservation">
+                                                    <i class="bi bi-check2-circle"></i> Approve
+                                                </button>
+                                            </form>
+                                        }
+                                        <form asp-action="DeleteProject" asp-route-id="@project.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to remove project \'@Html.Raw(JavaScriptEncoder.Default.Encode(project.Title))\' from the archive?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-0" title="Delete from archive">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages > 1)
+            {
+                <nav class="d-flex justify-content-center mt-4">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Library" asp-route-page="@(currentPage - 1)" asp-route-query="@ViewBag.Query" asp-route-departmentId="@ViewBag.DepartmentId" asp-route-year="@ViewBag.Year" asp-route-status="@ViewBag.Status">&laquo; Prev</a>
+                        </li>
+                        @for (int p = 1; p <= totalPages; p++)
+                        {
+                            <li class="page-item @(p == currentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Library" asp-route-page="@p" asp-route-query="@ViewBag.Query" asp-route-departmentId="@ViewBag.DepartmentId" asp-route-year="@ViewBag.Year" asp-route-status="@ViewBag.Status">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Library" asp-route-page="@(currentPage + 1)" asp-route-query="@ViewBag.Query" asp-route-departmentId="@ViewBag.DepartmentId" asp-route-year="@ViewBag.Year" asp-route-status="@ViewBag.Status">Next &raquo;</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-search display-5 d-block text-secondary opacity-50 mb-2"></i>
+                <h6>No Archive Projects Found</h6>
+                <p class="small">Try adjusting your search criteria or add new projects above.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal 1: Add Project Manually -->
+<div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="addProjectModalLabel">
+                    <i class="bi bi-plus-circle text-primary me-2"></i> Add Project to Department Archive
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="AddProject" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Project Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Smart IoT Plant Monitoring System" required />
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Project Description / Abstract <span class="text-danger">*</span></label>
+                        <textarea name="description" rows="4" class="form-control" placeholder="Full abstract of the project..." required></textarea>
+                    </div>
+
+                    <!-- Row: Dept, Year, Supervisor -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Department</label>
+                            <select name="departmentId" class="form-select" required>
+                                @foreach (var d in departments)
+                                {
+                                    <option value="@d.Id">@d.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Academic Year</label>
+                            <input type="number" name="year" class="form-control" value="@DateTime.UtcNow.Year" min="2015" max="2030" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Faculty Supervisor</label>
+                            <input type="text" name="supervisor" class="form-control" placeholder="e.g. Dr. Shahid Iqbal" />
+                        </div>
+                    </div>
+
+                    <!-- Row: Student Name(s) & University -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Student Name(s)</label>
+                            <input type="text" name="studentName" class="form-control" placeholder="e.g. Kausar Khattak, Mudassir Ahmad" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1">University / Institute</label>
+                            <input type="text" name="universityName" class="form-control" value="NUML Islamabad" placeholder="e.g. NUML Islamabad" />
+                        </div>
+                    </div>
+
+                    <!-- Keywords -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Keywords / Tools (Optional)</label>
+                        <input type="text" name="keywords" class="form-control" placeholder="e.g. IoT, ESP32, MQTT, Firebase (Auto-extracted if left empty)" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4" style="background-color: var(--numl-navy);">
+                        Save to Repository
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Bulk Archive & Document Import -->
+<div class="modal fade" id="bulkImportModal" tabindex="-1" aria-labelledby="bulkImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="bulkImportModalLabel">
+                    <i class="bi bi-folder-symlink text-success me-2"></i> Bulk Archive Import (PDF, Word, CSV, TXT)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="BulkImportFiles" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Upload student project documents (<strong>PDF</strong>, Word <strong>.docx / .doc</strong>, <strong>.txt</strong>) or spreadsheet records (<strong>.csv</strong>). The system will automatically extract project titles, text, keywords, and compute local ONNX embeddings for originality indexing.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Select Files <span class="text-danger">*</span></label>
+                        <input type="file" name="files" accept=".pdf,.docx,.doc,.txt,.csv" multiple class="form-control" required />
+                        <div class="form-text small text-muted">
+                            Supported: PDF (.pdf), Word (.docx, .doc), Text (.txt), and CSV (.csv). You can select multiple documents at once.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Default Department</label>
+                        <select name="defaultDepartmentId" class="form-select">
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4">
+                        <i class="bi bi-upload me-1"></i> Start Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

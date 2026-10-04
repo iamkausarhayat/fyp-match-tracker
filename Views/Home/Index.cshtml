@@ -1,0 +1,371 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Check FYP Idea Originality";
+    var departments = ViewBag.Departments as List<FypMatchTracker.Models.Department> ?? new List<FypMatchTracker.Models.Department>();
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+            
+            <!-- Hero Header -->
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white border shadow-sm mb-3">
+                    <span class="spinner-grow spinner-grow-sm text-success" role="status"></span>
+                    <span class="fw-semibold text-uppercase small" style="color: var(--numl-navy); font-size: 0.75rem; letter-spacing: 0.5px;">
+                        2026 Academic Session Active &bull; NUML CS Dept
+                    </span>
+                </div>
+                <h1 class="display-6 fw-bold mb-2" style="color: var(--numl-navy);">
+                    Is Your FYP Idea Truly Original?
+                </h1>
+                <p class="text-muted fs-6 mb-0">
+                    Verify your idea in seconds against NUML departmental archives and global literature using local semantic AI (70%) and keyword matching (30%).
+                </p>
+            </div>
+
+            <!-- Main Idea Submission Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <form asp-controller="Home" asp-action="CheckIdea" method="post" id="checkIdeaForm" enctype="multipart/form-data" onsubmit="return validateForm()">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Document Upload Option (PDF, Word, TXT, CSV) -->
+                    <div class="p-3 mb-4 rounded-3 border bg-light-subtle" style="background-color: #f8fafc; border: 1px dashed #cbd5e1 !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label fw-bold small text-uppercase text-secondary mb-0">
+                                <i class="bi bi-file-earmark-arrow-up text-primary me-1"></i> Upload Proposal Document (PDF / Word / TXT)
+                            </label>
+                            <span class="badge bg-primary text-white small px-2 py-1">Auto-Extract AI</span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Have your proposal as a <strong>PDF</strong>, Word <strong>.docx / .doc</strong>, or <strong>.txt</strong> file? Select it below to automatically extract the title, summary, and keywords:
+                        </p>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <input type="file" id="documentFileInput" name="documentFile" accept=".pdf,.docx,.doc,.txt,.csv" class="form-control form-control-sm flex-grow-1" onchange="autoExtractIfSelected()" />
+                            <button type="button" id="extractBtn" class="btn btn-outline-primary btn-sm px-3 rounded-pill fw-semibold" onclick="extractFromFile()">
+                                <i class="bi bi-magic me-1"></i> Auto-Fill Fields
+                            </button>
+                        </div>
+                        <div id="fileExtractStatus" class="small mt-2 d-none"></div>
+                    </div>
+
+                    <!-- Department Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase text-secondary mb-1" for="departmentId">
+                            Select Academic Department <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-building"></i>
+                            </span>
+                            <select id="departmentId" name="departmentId" class="form-select border-start-0 py-2" required>
+                                <option value="" selected disabled>-- Select Academic Department (Required) --</option>
+                                @foreach (var dept in departments)
+                                {
+                                    <option value="@dept.Id">@dept.Name (@dept.Code)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Project Title -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase text-secondary mb-1" for="title">
+                            Proposed FYP Title <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-card-heading"></i>
+                            </span>
+                            <input type="text" id="title" name="title" class="form-control border-start-0 py-2" 
+                                   placeholder="e.g. Automated Lung Cancer Detection from CT Scans using Deep CNN" 
+                                   required maxlength="200" autocomplete="off" />
+                        </div>
+                    </div>
+
+                    <!-- Proposed Abstract / Description -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold small text-uppercase text-secondary mb-0" for="description">
+                                Proposal Abstract / Idea Summary <span class="text-danger">*</span>
+                            </label>
+                            <span id="wordCountBadge" class="badge bg-light text-secondary border">0 / 500 words</span>
+                        </div>
+                        <textarea id="description" name="description" rows="6" class="form-control" 
+                                  placeholder="Describe the problem, proposed solution, methodology, and objectives (max 500 words)..." 
+                                  required oninput="updateWordCount()"></textarea>
+                        <div class="form-text small text-muted">
+                            Tip: A detailed summary (100–300 words) provides the most accurate semantic comparison.
+                        </div>
+                    </div>
+
+                    <!-- Tools & Keywords -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase text-secondary mb-1" for="keywords">
+                            Tools, Frameworks &amp; Key Phrases <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-tags"></i>
+                            </span>
+                            <input type="text" id="keywords" name="keywords" class="form-control border-start-0 py-2" 
+                                   placeholder="e.g. Python, PyTorch, ResNet-50, OpenCV, FastAPI" />
+                        </div>
+                        <div class="form-text small text-muted">
+                            Separate tools with commas to enhance Jaccard keyword matching.
+                        </div>
+                    </div>
+
+                    <!-- Proposed Supervisor (Optional) -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase text-secondary mb-1" for="supervisor">
+                            Proposed Faculty Supervisor <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-person-badge"></i>
+                            </span>
+                            <input type="text" id="supervisor" name="supervisor" class="form-control border-start-0 py-2" 
+                                   placeholder="e.g. Dr. Muhammad Bilal, Ms. Ayesha Khalid (Optional)" />
+                        </div>
+                        <div class="form-text small text-muted">
+                            If already finalized with a faculty supervisor, enter their name here.
+                        </div>
+                    </div>
+
+                    <!-- Student Identity Status Banner / Guest Mode Inputs -->
+                    @if (User.Identity != null && User.Identity.IsAuthenticated && !User.IsInRole("Guest"))
+                    {
+                        <div class="d-flex align-items-center gap-2 p-2.5 px-3 mb-4 bg-light rounded-3 border">
+                            <i class="bi bi-person-check-fill text-success fs-5"></i>
+                            <div class="small">
+                                Submitting proposal as registered student: <strong class="text-dark">@User.Identity.Name</strong>
+                                @if (User.FindFirst("University") != null)
+                                {
+                                    <span class="text-muted">&bull; @User.FindFirst("University")?.Value</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-3 mb-4 rounded-3 border bg-light-subtle" style="background-color: #f8fafc; border: 1px dashed #cbd5e1 !important;">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle small fw-semibold px-2 py-1">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> Guest Mode Active
+                                </span>
+                                <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Home/Index" class="small text-decoration-none fw-semibold">
+                                    Have an institutional account? Sign In
+                                </a>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="studentName">
+                                        Student Name <span class="text-muted fw-normal">(Optional)</span>
+                                    </label>
+                                    <input type="text" id="studentName" name="studentName" class="form-control form-control-sm" 
+                                           placeholder="e.g. Guest Student or your name" 
+                                           value="@(User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Guest Student")" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="universityName">
+                                        University / Institute <span class="text-muted fw-normal">(Optional)</span>
+                                    </label>
+                                    <input type="text" id="universityName" name="universityName" class="form-control form-control-sm" 
+                                           placeholder="e.g. NUML Islamabad" 
+                                           value="@(User.FindFirst("University")?.Value ?? "NUML Islamabad")" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" id="submitBtn" class="btn btn-primary py-3 rounded-pill fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-2" style="background-color: var(--numl-navy); border-color: var(--numl-navy);">
+                            <i class="bi bi-shield-check fs-5"></i>
+                            <span id="btnText">Analyze Originality &amp; Find Duplicates</span>
+                            <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- Guest & Privacy Notice -->
+                <div class="mt-4 pt-3 border-top text-center">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        @if (User.IsInRole("Coordinator"))
+                        {
+                            <span class="text-muted small">
+                                <i class="bi bi-shield-lock text-primary me-1"></i> Logged in as Coordinator: <strong>@User.Identity.Name</strong>. You have administrative access to the archive and settings.
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">
+                                <i class="bi bi-person-check text-success me-1"></i> Logged in as <strong>@User.Identity.Name</strong>. Your check will be linked to your student history.
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted small">
+                            <i class="bi bi-info-circle text-primary me-1"></i> Guest Check: Anyone can check ideas without logging in! <a asp-controller="Account" asp-action="Login" class="text-decoration-none fw-semibold">Login</a> to save results and reserve approved titles.
+                        </span>
+                    }
+                </div>
+
+            </div>
+
+            <!-- Features Quick Info -->
+            <div class="row g-3 mt-4 text-center">
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded-3 border">
+                        <i class="bi bi-cpu fs-3 text-primary mb-2 d-block"></i>
+                        <h6 class="fw-bold mb-1">Local AI (70%)</h6>
+                        <p class="text-muted small mb-0">Runs privately on server CPU using Microsoft BGE ONNX embeddings.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded-3 border">
+                        <i class="bi bi-intersect fs-3 text-success mb-2 d-block"></i>
+                        <h6 class="fw-bold mb-1">Jaccard Keywords (30%)</h6>
+                        <p class="text-muted small mb-0">Compares critical tools and technical nouns with stop-word filtering.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded-3 border">
+                        <i class="bi bi-globe fs-3 text-info mb-2 d-block"></i>
+                        <h6 class="fw-bold mb-1">Crossref Research API</h6>
+                        <p class="text-muted small mb-0">Cross-examines published IEEE, ACM &amp; Springer literature in real-time.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateWordCount() {
+        const text = document.getElementById('description').value.trim();
+        const words = text ? text.split(/\s+/).length : 0;
+        const badge = document.getElementById('wordCountBadge');
+        badge.textContent = `${words} / 500 words`;
+
+        if (words > 500) {
+            badge.className = 'badge bg-danger text-white border';
+        } else if (words >= 400) {
+            badge.className = 'badge bg-warning text-dark border';
+        } else {
+            badge.className = 'badge bg-light text-secondary border';
+        }
+    }
+
+    function autoExtractIfSelected() {
+        const fileInput = document.getElementById('documentFileInput');
+        if (fileInput.files && fileInput.files.length > 0) {
+            extractFromFile();
+        }
+    }
+
+    async function extractFromFile() {
+        const fileInput = document.getElementById('documentFileInput');
+        const statusDiv = document.getElementById('fileExtractStatus');
+        const extractBtn = document.getElementById('extractBtn');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            statusDiv.className = 'small mt-2 text-danger';
+            statusDiv.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Please choose a PDF, Word (.docx), or text document first.';
+            statusDiv.classList.remove('d-none');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('documentFile', file);
+
+        // Get anti-forgery token from form
+        const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (tokenElement) {
+            formData.append('__RequestVerificationToken', tokenElement.value);
+        }
+
+        // Show loading state
+        extractBtn.disabled = true;
+        extractBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Extracting...';
+        statusDiv.className = 'small mt-2 text-primary';
+        statusDiv.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Extracting proposal details from <strong>' + escapeHtml(file.name) + '</strong>...';
+        statusDiv.classList.remove('d-none');
+
+        try {
+            const response = await fetch('/Home/ExtractDocument', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                if (result.title) {
+                    document.getElementById('title').value = result.title;
+                }
+                if (result.description) {
+                    document.getElementById('description').value = result.description;
+                    updateWordCount();
+                }
+                // Tools & frameworks left blank for student to manually enter per requirement
+                document.getElementById('keywords').value = '';
+
+                statusDiv.className = 'small mt-2 text-success fw-semibold';
+                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Successfully extracted Title and Proposal Description from <em>' + escapeHtml(file.name) + '</em>! Tools &amp; Frameworks are left blank for you to manually add if desired.';
+            } else {
+                statusDiv.className = 'small mt-2 text-danger';
+                statusDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' + (result.message || 'Failed to extract text.');
+            }
+        } catch (err) {
+            statusDiv.className = 'small mt-2 text-danger';
+            statusDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Error processing document: ' + err.message;
+        } finally {
+            extractBtn.disabled = false;
+            extractBtn.innerHTML = '<i class="bi bi-magic me-1"></i> Auto-Fill Fields';
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+    }
+
+    function validateForm() {
+        const dept = document.getElementById('departmentId').value;
+        if (!dept || dept.trim() === '') {
+            alert('Please select your Academic Department before proceeding.');
+            document.getElementById('departmentId').focus();
+            return false;
+        }
+
+        const text = document.getElementById('description').value.trim();
+        const words = text ? text.split(/\s+/).length : 0;
+        if (words > 500) {
+            alert('Your proposal abstract exceeds the 500-word limit. Please shorten it.');
+            return false;
+        }
+
+        // Show spinner and prevent multiple clicks safely
+        const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('btnSpinner');
+
+        btnText.textContent = 'Evaluating Semantics & Querying Crossref...';
+        spinner.classList.remove('d-none');
+        btn.classList.add('disabled');
+        btn.style.pointerEvents = 'none';
+
+        return true;
+    }
+</script>
+}

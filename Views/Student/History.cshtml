@@ -1,0 +1,143 @@
+@model List<FypMatchTracker.Models.SimilarityCheck>
+@{
+    ViewData["Title"] = "My Proposal Checks & Reservations - NUML";
+    var reservedProjects = ViewBag.ReservedProjects as List<FypMatchTracker.Models.FypProject> ?? new List<FypMatchTracker.Models.FypProject>();
+}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--numl-navy);">My FYP Proposal History</h3>
+            <p class="text-muted small mb-0">Track all your submitted originality evaluations and officially reserved idea tokens</p>
+        </div>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-sm rounded-pill px-3 fw-medium" style="background-color: var(--numl-navy);">
+            <i class="bi bi-plus-lg me-1"></i> New Idea Check
+        </a>
+    </div>
+
+    <!-- Active Reservations Card -->
+    @if (reservedProjects.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white border-start border-4 border-success">
+            <h5 class="fw-bold mb-3 text-success d-flex align-items-center gap-2">
+                <i class="bi bi-patch-check-fill fs-4"></i> Officially Reserved FYP Project
+            </h5>
+            <div class="row g-3">
+                @foreach (var proj in reservedProjects)
+                {
+                    <div class="col-md-12">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                <span class="badge bg-success-subtle text-success border border-success font-monospace px-3 py-1 fs-6">
+                                    Token: @proj.ReservationToken
+                                </span>
+                                <span class="badge bg-light text-muted border">Academic Session @proj.Year</span>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">@proj.Title</h5>
+                            <p class="text-muted small mb-2">@(proj.Description?.Length > 180 ? proj.Description.Substring(0, 180) + "..." : proj.Description)</p>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-white text-secondary border">Status: @proj.Status</span>
+                                <span class="badge bg-white text-secondary border">Department: @(proj.Department?.Name ?? "Computer Science")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Checks History Table Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h5 class="fw-bold mb-0" style="color: var(--numl-navy);">
+                <i class="bi bi-clock-history text-primary me-2"></i> Submitted Idea Checks (@Model.Count)
+            </h5>
+            
+            <!-- Search & Verdict Filter Form -->
+            <form method="get" asp-action="History" class="d-flex flex-wrap gap-2">
+                <input type="text" name="query" value="@ViewBag.Query" class="form-control form-control-sm rounded-pill" placeholder="Search my ideas..." style="width: 180px;" />
+                <select name="verdict" class="form-select form-select-sm rounded-pill" style="width: 140px;">
+                    <option value="">All Verdicts</option>
+                    <!option value="UNIQUE" @(ViewBag.Verdict == "UNIQUE" ? "selected" : "")>UNIQUE</!option>
+                    <!option value="SIMILAR" @(ViewBag.Verdict == "SIMILAR" ? "selected" : "")>SIMILAR</!option>
+                    <!option value="ALREADY DONE" @(ViewBag.Verdict == "ALREADY DONE" ? "selected" : "")>ALREADY DONE</!option>
+                </select>
+                <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+                @if (!string.IsNullOrEmpty(ViewBag.Query) || !string.IsNullOrEmpty(ViewBag.Verdict))
+                {
+                    <a asp-action="History" class="btn btn-light btn-sm rounded-pill border">Reset</a>
+                }
+            </form>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase text-secondary">
+                            <th>Date &amp; Time</th>
+                            <th>Proposed FYP Title</th>
+                            <th>Department</th>
+                            <th>Top Score</th>
+                            <th>Verdict</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            string badgeClass = item.Verdict switch
+                            {
+                                "UNIQUE" => "bg-success text-white",
+                                "SIMILAR" => "bg-warning text-dark",
+                                _ => "bg-danger text-white"
+                            };
+
+                            <tr>
+                                <td class="text-muted small" style="white-space: nowrap;">
+                                    @item.CheckedAt.ToLocalTime().ToString("MMM dd, yyyy")<br />
+                                    <span class="font-monospace" style="font-size: 0.75rem;">@item.CheckedAt.ToLocalTime().ToString("hh:mm tt")</span>
+                                </td>
+                                <td>
+                                    <strong class="text-dark d-block">@item.SubmittedTitle</strong>
+                                    <small class="text-muted">@(item.SubmittedText.Length > 80 ? item.SubmittedText.Substring(0, 80) + "..." : item.SubmittedText)</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-secondary border font-monospace">@item.DepartmentName</span>
+                                </td>
+                                <td>
+                                    <strong class="font-monospace fs-6">@item.TopScore%</strong>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass text-uppercase px-2.5 py-1 font-monospace">
+                                        @item.Verdict
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="Home" asp-action="Report" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                        <i class="bi bi-file-earmark-text me-1"></i> View Report
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-folder2-open display-4 d-block text-secondary opacity-50 mb-2"></i>
+                <h6>No Similarity Checks Found</h6>
+                <p class="small mb-3">You haven't run any idea checks yet while logged into this account.</p>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                    Submit Your First Idea
+                </a>
+            </div>
+        }
+    </div>
+</div>

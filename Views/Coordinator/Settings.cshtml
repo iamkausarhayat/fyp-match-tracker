@@ -1,0 +1,175 @@
+@model FypMatchTracker.Models.SimilaritySetting
+@{
+    ViewData["Title"] = "Algorithm Sensitivity Settings - NUML";
+    int semWeightPct = (int)Math.Round(Model.SemanticWeight > 1.0 ? Model.SemanticWeight : Model.SemanticWeight * 100);
+    int keyWeightPct = (int)Math.Round(Model.KeywordWeight > 1.0 ? Model.KeywordWeight : Model.KeywordWeight * 100);
+}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--numl-navy);">Algorithm Sensitivity Settings</h3>
+            <p class="text-muted small mb-0">Configure similarity thresholds and hybrid formula weights as per departmental criteria</p>
+        </div>
+        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <form asp-action="Settings" method="post" id="settingsForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Section 1: Classification Thresholds -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="rounded-3 p-2 bg-primary-subtle text-primary">
+                                <i class="bi bi-speedometer2 fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark">Classification Verdict Thresholds</h5>
+                                <small class="text-muted">Sets the percentage boundary separating Unique, Similar, and Duplicate ideas</small>
+                            </div>
+                        </div>
+
+                        <!-- Low Threshold (Green Boundary) -->
+                        <div class="p-3 bg-light rounded-3 mb-3 border">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-bold mb-0 text-success" for="lowThreshold">
+                                    <i class="bi bi-shield-check me-1"></i> Unique Threshold (Green Upper Limit)
+                                </label>
+                                <span class="badge bg-success fs-6 font-monospace" id="lowVal">@Model.LowThreshold%</span>
+                            </div>
+                            <input type="range" class="form-range" id="lowThreshold" name="lowThreshold" min="5" max="40" step="1" 
+                                   value="@Model.LowThreshold" oninput="updateSliders()" />
+                            <small class="text-muted">Scores below this limit are marked as <strong>UNIQUE</strong> and eligible for direct reservation.</small>
+                        </div>
+
+                        <!-- High Threshold (Red Boundary) -->
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-bold mb-0 text-danger" for="highThreshold">
+                                    <i class="bi bi-shield-x me-1"></i> Duplicate Threshold (Red Lower Limit)
+                                </label>
+                                <span class="badge bg-danger fs-6 font-monospace" id="highVal">@Model.HighThreshold%</span>
+                            </div>
+                            <input type="range" class="form-range" id="highThreshold" name="highThreshold" min="40" max="80" step="1" 
+                                   value="@Model.HighThreshold" oninput="updateSliders()" />
+                            <small class="text-muted">Scores at or above this limit are flagged as <strong>ALREADY DONE</strong> (High Risk).</small>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Hybrid Formula Weights -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="rounded-3 p-2 bg-info-subtle text-info">
+                                <i class="bi bi-sliders fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark">Hybrid AI Evaluation Weights</h5>
+                                <small class="text-muted">Balance between deep semantic context and exact technical keyword matching</small>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Semantic Weight -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded-3 border h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label fw-bold mb-0 text-primary" for="semanticWeight">
+                                            Semantic AI Weight
+                                        </label>
+                                        <span class="badge bg-primary fs-6 font-monospace" id="semVal">@semWeightPct%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="semanticWeight" name="semanticWeight" min="10" max="90" step="5" 
+                                           value="@semWeightPct" oninput="balanceWeights('semantic')" />
+                                    <small class="text-muted d-block">Weight allocated to 384-dimension vector embeddings.</small>
+                                </div>
+                            </div>
+
+                            <!-- Keyword Weight -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded-3 border h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label fw-bold mb-0 text-secondary" for="keywordWeight">
+                                            Jaccard Keywords Weight
+                                        </label>
+                                        <span class="badge bg-secondary fs-6 font-monospace" id="keyVal">@keyWeightPct%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="keywordWeight" name="keywordWeight" min="10" max="90" step="5" 
+                                           value="@keyWeightPct" oninput="balanceWeights('keyword')" />
+                                    <small class="text-muted d-block">Weight allocated to token and tool overlap.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Visual Formula Box -->
+                        <div class="p-3 bg-white rounded-3 border mt-3 shadow-2xs">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 0.75rem;">Active Evaluation Formula:</small>
+                            <code class="text-dark fs-6" id="formulaPreview">
+                                FinalScore = (<span id="semPreview">@semWeightPct</span>% &times; Semantic) + (<span id="keyPreview">@keyWeightPct</span>% &times; Jaccard)
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetDefaults()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset NUML Defaults (20/50, 70/30)
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" style="background-color: var(--numl-navy); border-color: var(--numl-navy);">
+                            <i class="bi bi-check2-circle me-1"></i> Save Configuration
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateSliders() {
+        const low = document.getElementById('lowThreshold').value;
+        const high = document.getElementById('highThreshold').value;
+        document.getElementById('lowVal').textContent = `${low}%`;
+        document.getElementById('highVal').textContent = `${high}%`;
+    }
+
+    function balanceWeights(changed) {
+        const sem = document.getElementById('semanticWeight');
+        const key = document.getElementById('keywordWeight');
+
+        if (changed === 'semantic') {
+            key.value = 100 - sem.value;
+        } else {
+            sem.value = 100 - key.value;
+        }
+
+        document.getElementById('semVal').textContent = `${sem.value}%`;
+        document.getElementById('keyVal').textContent = `${key.value}%`;
+        document.getElementById('semPreview').textContent = sem.value;
+        document.getElementById('keyPreview').textContent = key.value;
+    }
+
+    function resetDefaults() {
+        document.getElementById('lowThreshold').value = 20;
+        document.getElementById('highThreshold').value = 50;
+        document.getElementById('semanticWeight').value = 70;
+        document.getElementById('keywordWeight').value = 30;
+
+        document.getElementById('lowVal').textContent = '20%';
+        document.getElementById('highVal').textContent = '50%';
+        document.getElementById('semVal').textContent = '70%';
+        document.getElementById('keyVal').textContent = '30%';
+        document.getElementById('semPreview').textContent = '70';
+        document.getElementById('keyPreview').textContent = '30';
+    }
+</script>
+}

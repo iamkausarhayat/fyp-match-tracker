@@ -1,0 +1,108 @@
+@{
+    ViewData["Title"] = "Student Registration - NUML FYP Match Tracker";
+    var departments = ViewBag.Departments as List<FypMatchTracker.Models.Department> ?? new List<FypMatchTracker.Models.Department>();
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <!-- Card -->
+            <div class="card border-0 shadow rounded-4 p-4 p-md-5 bg-white">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div class="brand-monogram mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.4rem;">N</div>
+                    <h3 class="fw-bold mb-1" style="color: var(--numl-navy);">Student Registration</h3>
+                    <p class="text-muted small">Create an account to track proposals and reserve approved FYP titles</p>
+                </div>
+
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show small rounded-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> @ViewBag.ErrorMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <form asp-controller="Account" asp-action="Register" method="post" id="registerForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="fullName">Full Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                            <input type="text" id="fullName" name="fullName" class="form-control border-start-0 py-2" placeholder="e.g. Kausar Khattak" required autocomplete="name" />
+                        </div>
+                    </div>
+
+                    <!-- University & Department (Row) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="university">University / Institute <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-mortarboard"></i></span>
+                                <input type="text" id="university" name="university" class="form-control border-start-0 py-2" placeholder="e.g. NUML Islamabad" required />
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="departmentId">Department <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-building"></i></span>
+                                <select id="departmentId" name="departmentId" class="form-select border-start-0 py-2" required>
+                                    @foreach (var dept in departments)
+                                    {
+                                        <option value="@dept.Id">@dept.Name (@dept.Code)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Institutional Email -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="email">Institutional Email <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                            <input type="email" id="email" name="email" class="form-control border-start-0 py-2" placeholder="e.g. s2258077@numl.edu.pk" required autocomplete="email" />
+                        </div>
+                        <div class="form-text small text-muted">Use your official NUML university email address.</div>
+                    </div>
+
+                    <!-- Password & Confirm Password (Row) -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="password">Password <span class="text-danger">*</span></label>
+                            <input type="password" id="password" name="password" class="form-control py-2" placeholder="Min. 6 chars" required minlength="6" autocomplete="new-password" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase mb-1" for="confirmPassword">Confirm Password <span class="text-danger">*</span></label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" class="form-control py-2" placeholder="Re-type password" required minlength="6" autocomplete="new-password" />
+                        </div>
+                    </div>
+
+                    <!-- Coordinator Note -->
+                    <div class="alert alert-light border small text-muted mb-4">
+                        <i class="bi bi-info-circle text-primary me-1"></i>
+                        <strong>Notice:</strong> This registration portal is for students. Faculty coordinators are provisioned directly by the NUML IT Department.
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary py-2 rounded-pill fw-bold shadow-sm" style="background-color: var(--numl-navy); border-color: var(--numl-navy);">
+                            Complete Registration
+                        </button>
+                    </div>
+
+                    <!-- Link to Login -->
+                    <div class="text-center">
+                        <span class="text-muted small">Already registered?</span>
+                        <a asp-action="Login" class="text-decoration-none small fw-semibold">Sign in here</a>
+                    </div>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
